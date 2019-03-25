@@ -1,0 +1,14 @@
+
+<!-- saved from url=(0097)https://www.pythonanywhere.com/user/discorn/files/home/discorn/mysite/templates/_formhelpers.html -->
+<html class="gr__pythonanywhere_com"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body data-gr-c-s-loaded="true">{% macro render_field(field) %}
+    <dt>{{ field.label }}
+    </dt><dd>{{ field(**kwargs)|safe }}
+    {% if field.errors %}
+        <ul class="errors">
+        {% for error in field.errors %}
+            <li>{{ error }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+    </dd>
+{% endmacro %}</body></html>
