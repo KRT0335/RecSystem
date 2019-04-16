@@ -6,3 +6,6 @@ class GameSearchForm(Form):
     choices = [('QueryName', 'Title'), ('AboutText', 'Description')]
     select = SelectField('Search for:', choices=choices)
     search = StringField('')
+
+class ClassifierForm(Form):
+    query = StringField('')

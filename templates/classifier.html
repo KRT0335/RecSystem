@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<head>
+    <title>Flask Steam Game Database</title>
+</head>
+
+<li><a href="/">Phase 1: Search</a></li>
+<h2>Flask Steam Game Database</h2>
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+
+{% from "_formhelpers.html" import render_field %}
+<form method=post>
+  <dl>
+    {{ render_field(form.query) }}
+  </dl>
+  <p><input type=submit value=Classify>
+</form>
+
+<br>P(Action) = {{P_Action}}</br>
+<br>P(Adventure) = {{P_Adventure}}</br>
+<br>P(Strategy) = {{P_Strategy}}</br>
+<br>P(RPG) = {{P_RPG}}</br>
+<br>P(Sport) = {{P_Sports}}</br>
+<br>P(Racing) = {{P_Racing}}</br>
+<br> </br>
+<br> Number of words for Action:    {{numWordsAction}}</br>
+<br> Number of words for Adventure: {{numWordsAdventure}}</br>
+<br> Number of words for Strategy:  {{numWordsStrategy}}</br>
+<br> Number of words for RPG:       {{numWordsRPG}}</br>
+<br> Number of words for Sport:    {{numWordsSport}}</br>
+<br> Number of words for Racing:    {{numWordsRacing}}</br>
+<br> Total number of unique words:  {{numUniqueWords}}</br>
+<br> </br>
+
+
+{% for i in range(query_string_num) %}
+  <br>P({{query_string_vector_unique[i]}} | Action) = {{probArray[0][i]}}</br>
+  <br>P({{query_string_vector_unique[i]}} | Adventure) = {{probArray[1][i]}}</br>
+  <br>P({{query_string_vector_unique[i]}} | Strategy) = {{probArray[2][i]}}</br>
+  <br>P({{query_string_vector_unique[i]}} | RPG) = {{probArray[3][i]}}</br>
+  <br>P({{query_string_vector_unique[i]}} | Sport) = {{probArray[4][i]}}</br>
+  <br>P({{query_string_vector_unique[i]}} | Racing) = {{probArray[5][i]}}</br>
+  <br> </br>
+{% endfor %}
+
+<br>P(Action | Query) = {{P_class_given_d[0]}}</br>
+<br>P(Adventure | Query) = {{P_class_given_d[1]}}</br>
+<br>P(Strategy | Query) = {{P_class_given_d[2]}}</br>
+<br>P(RPG | Query) = {{P_class_given_d[3]}}</br>
+<br>P(Sport | Query) = {{P_class_given_d[4]}}</br>
+<br>P(Racing | Query) = {{P_class_given_d[5]}}</br>
+

@@ -6,6 +6,27 @@
 
 </head>
 
+<li><a href="/classifierIndex">Phase 2: Classifier</a></li>
+<h2>Flask Steam Game Database</h2>
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+
+{% from "_formhelpers.html" import render_field %}
+<form method=post>
+  <dl>
+    {{ render_field(form.search) }}
+  </dl>
+  <p><input type=submit value=Search>
+</form>
+
 <table style="width:100%">
     <tr>
       <th>Title</th>
@@ -14,6 +35,7 @@
       <th>Recommendation Count</th>
       <th>Initial Price</th>
       <th>Description</th>
+      <th>TF-IDF Score</th>
   </tr>
     {% for game in table %}
     <tr id="{{ game.id }}">
@@ -27,4 +49,6 @@
     </tr>
     {% endfor %}
 </table>
+
+
 

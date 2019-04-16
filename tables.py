@@ -1,5 +1,4 @@
-from flask_table import Col
-from flask_table import Table
+from flask_table import Table, Col, LinkCol
 
 class Results(Table):
     id = Col('ID', show=False)
@@ -9,4 +8,3 @@ class Results(Table):
     RecommendationCount = Col('RecommendationCount')
     PriceInitial = Col('PriceInitial')
     AboutText = Col('AboutText')
-
