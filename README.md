@@ -17,7 +17,7 @@ Uses games.db (This was made for PythonAnywhere so **app.config['SQLALCHEMY_DATA
 
 
 # Dataset: 
-https://data.world/craigkelly/steam-game-data 
+https://data.world/craigkelly/steam-game-data  
 # References:
 Basic flask tutorial  
 http://www.blog.pythonlibrary.org/2017/12/12/flask-101-getting-started/  
