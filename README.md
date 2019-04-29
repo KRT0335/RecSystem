@@ -12,6 +12,8 @@ After downloading all of the files
 App routing / main file: flask1.py  
 Uses games.db (This was made for PythonAnywhere so **app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///games.db'** for localhost and **app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////home/<username>/mysite/games.db'** for PythonAnywhere) as the central database that was build using the dataset provided by Craig Kell under another program convertCSV.py to summarize the dataset to a more understandable database to be internally stored on the Games class in flask1.py.  
   
+# Libraries
+flask, flask_sqlalchemy, numpy, re, operator 
 
 
 
