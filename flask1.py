@@ -31,6 +31,7 @@ class Games(db.Model):
     isRPG = db.Column(db.String(8), nullable=False)
     isSports = db.Column(db.String(8), nullable=False)
     isRacing = db.Column(db.String(8), nullable=False)
+    GenreList = db.Column(db.String(175), nullable=True)
     tfidfScore = 0.0
 
     def __init__(self, id, QueryName, ReleaseDate, Metacritic, RecommendationCount, PriceInitial, AboutText, isAction, isAdventure, isStrategy, isRPG, isSports, isRacing):
@@ -47,6 +48,7 @@ class Games(db.Model):
         self.isRPG = isRPG
         self.isSports = isSports
         self.isRacing = isRacing
+        self.GenreList = isAction
         self.tfidfScore = 0.0
 
     def __iter__(self):
@@ -56,6 +58,17 @@ class Games(db.Model):
         #return '<Games %r>' % self.QueryName
     #def __repr__(self):
      #   return "Game('{self.QueryName}', '{self.ReleaseDate}','{self.Metacritic}','{self.RecommendationCount}','{self.PriceInitial}','{self.AboutText}')"
+
+class searchQueryHistoryList:
+    query = ' '
+
+    def __init__(self, query):
+        self.query = query
+
+    def __iter__(self):
+        return self
+
+searchQueryHistory = []
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -193,7 +206,6 @@ def class_results(query):
 @app.route('/results', methods=['GET', 'POST'])
 def search_results(search):
     search = GameSearchForm(request.form)
-    results = []
     search_string = search.data['search']
     search_string_vector = np.unique(re.split('[-_;:?<>() |, |/*|\n.!-+\t]', search_string.lower())).tolist()
     while search_string_vector.count(''):
@@ -274,15 +286,313 @@ def search_results(search):
         #results.sort(key=operator.attrgetter('tfidfScore'), reverse=True)
         maxDisp = 10
         for i in range(0, maxDisp):
+            GenreList = 'None'
+            first = False
+            if results[i].isAction == 'True':
+                if first == False:
+                    GenreList = 'Action'
+                else:
+                    GenreList = GenreList + 'Action'
+                if first == False:
+                    first = True
+            if results[i].isAdventure == 'True':
+                if first == True:
+                    GenreList = GenreList + ' '
+                if first == False:
+                    GenreList = 'Adventure'
+                else:
+                    GenreList = GenreList + 'Adventure'
+                if first == False:
+                    first = True
+            if results[i].isStrategy == 'True':
+                if first == True:
+                    GenreList = GenreList + ' '
+                if first == False:
+                    GenreList = 'Strategy'
+                else:
+                    GenreList = GenreList + 'Strategy'
+                if first == False:
+                    first = True
+            if results[i].isRPG == 'True':
+                if first == True:
+                    GenreList = GenreList + ' '
+                if first == False:
+                    GenreList = 'RPG'
+                else:
+                    GenreList = GenreList + 'RPG'
+                if first == False:
+                    first = True
+            if results[i].isSports == 'True':
+                if first == True:
+                    GenreList = GenreList + ' '
+                if first == False:
+                    GenreList = 'Sport'
+                else:
+                    GenreList = GenreList + 'Sport'
+                if first == False:
+                    first = True
+            if results[i].isRacing == 'True':
+                if first == True:
+                    GenreList = GenreList + ' '
+                if first == False:
+                    GenreList = 'Racing'
+                else:
+                    GenreList = GenreList + 'Racing'
+                if first == False:
+                    first = True
+
+            results[i].GenreList = GenreList
+
             if results[i].tfidfScore == 0.0 and maxDisp == 10:
                 maxDisp = i
-                print(maxDisp)
+                #print(maxDisp)
+
+        searchQueryHistory.append(searchQueryHistoryList(search_string))
+        #print(len(searchQueryHistory))
 
 
-        return render_template('results.html', table=results[0:maxDisp], form=search)
+        return render_template('results.html', table=results[0:maxDisp], query=search_string_vector, form=search)
         #table = Results(results)
         #table.border = True
         #return render_template('results.html', table=table)
+
+
+@app.route('/recommend', methods=['GET', 'POST'])
+def rec():
+    search_string = 'AboutText'
+    search_string_vector = np.unique(re.split('[-_;:?<>() |, |/*|\n.!-+\t]', search_string.lower())).tolist()
+    while search_string_vector.count(''):
+        search_string_vector.remove('')
+
+    if search_string:
+        """if search.data['select'] == 'AboutText':
+            qry = db_session.query(Games).filter(Games.AboutText.contains(search_string))
+            results = qry.all()
+        elif search.data['select'] == 'QueryName':
+            qry = db_session.query(Games).filter(Games.QueryName.contains(search_string))
+            results = qry.all()
+        else:
+            qry = db_session.query(Games)
+            results = qry.all()"""
+        # qry = db_session.query(Games).filter(Games.AboutText.contains(search_string))
+        # results = qry.all()
+        qry = db_session.query(Games)
+        results = qry.all()
+
+        numofDoc = len(results)
+        numofWordSearch = len(search_string_vector)
+
+        # IDF
+        IDF = np.zeros(numofWordSearch).tolist()
+        for i in range(numofWordSearch):
+            qry2 = db_session.query(Games).filter(Games.AboutText.contains(search_string_vector[i]))
+            results2 = qry2.all()
+            IDF[i] = np.log(numofDoc / (1 + len(results2)))
+
+        # TF
+        doc = np.zeros((numofDoc, numofWordSearch)).tolist()
+        for i in range(0, numofDoc):
+            postsplit = re.split('[-_;:?<>() |, |/*|\n.!-+\t]', results[i].AboutText.lower())
+            while postsplit.count(''):
+                postsplit.remove('')
+            numofWordDoc = len(postsplit)
+            tfidfScore_sum = 0.0
+            for j in range(0, numofWordSearch):
+                doc[i][j] = postsplit.count(search_string_vector[j]) / (1 + numofWordDoc)
+                # TF-IDF
+                tfidfScore_sum = tfidfScore_sum + (doc[i][j] * IDF[j])
+            results[i].tfidfScore = tfidfScore_sum
+
+    else:
+        qry = db_session.query(Games)
+        results = qry.all()
+
+    results.sort(key=operator.attrgetter('tfidfScore'), reverse=True)
+
+
+    histCount = len(searchQueryHistory)
+    hist = searchQueryHistory
+    if histCount < 3:
+        if histCount == 0:
+            return redirect('/')
+        hist = hist[0:histCount]
+    else:
+        hist = hist[histCount-3:histCount]
+
+    qry = db_session.query(Games)
+    results = qry.all()
+
+    numofDoc = len(results)
+    for w in range(0, len(hist)):
+        #TF-IDF
+        search_string_vector = np.unique(re.split('[-_;:?<>() |, |/*|\n.!-+\t]', hist[w].query.lower())).tolist()
+        while search_string_vector.count(''):
+            search_string_vector.remove('')
+
+        numofWordSearch = len(search_string_vector)
+
+        query_string_vector = re.split('[-_;:?<>() |, |/*|\n.!-+\t]', hist[w].query.lower())
+        while query_string_vector.count(''):
+            query_string_vector.remove('')
+        query_string_vector_unique = np.unique(query_string_vector).tolist()
+        query_string_num = len(query_string_vector_unique)
+
+        ##Probabilty
+        # Get num of unique words over every document
+        bag = []
+        bagAction = []
+        bagAdventure = []
+        bagStrategy = []
+        bagRPG = []
+        bagSport = []
+        bagRacing = []
+        numAction = 0
+        numAdventure = 0
+        numStrategy = 0
+        numRPG = 0
+        numSports = 0
+        numRacing = 0
+        P_class_given_d = np.zeros(6).tolist()
+        probArray = np.zeros((6, query_string_num)).tolist()
+        # 1: Action
+        # 2: Adventure
+        # 3: Strategy
+        # 4: RPG
+        # 5: Sports
+        # 6: Racing
+        for i in range(0, numofDoc):
+            string_vector = re.split('[-_;:?<>() |, |/*|\n.!-+\t]', results[i].AboutText.lower())
+            while string_vector.count(''):
+                string_vector.remove('')
+            string_vector_unique = np.unique(string_vector).tolist()
+
+            # Class Distribution
+            if results[i].isAction == 'True':
+                numAction = numAction + 1
+                bagAction.extend(string_vector)
+            if results[i].isAdventure == 'True':
+                numAdventure = numAdventure + 1
+                bagAdventure.extend(string_vector)
+            if results[i].isStrategy == 'True':
+                numStrategy = numStrategy + 1
+                bagStrategy.extend(string_vector)
+            if results[i].isRPG == 'True':
+                numRPG = numRPG + 1
+                bagRPG.extend(string_vector)
+            if results[i].isSports == 'True':
+                numSports = numSports + 1
+                bagSport.extend(string_vector)
+            if results[i].isRacing == 'True':
+                numRacing = numRacing + 1
+                bagRacing.extend(string_vector)
+
+            bag.extend(string_vector_unique)
+
+        numWordsAction = len(bagAction)
+        numWordsAdventure = len(bagAdventure)
+        numWordsStrategy = len(bagStrategy)
+        numWordsRPG = len(bagRPG)
+        numWordsSport = len(bagSport)
+        numWordsRacing = len(bagRacing)
+
+        numUniqueWords = len(set(bag))
+
+        for j in range(query_string_num):
+            # P(word | class) = (num of times "word" shows up in "class" + 1)/(total num of words in "class" + num of unique words over all of the documents)
+            probArray[0][j] = (bagAction.count(query_string_vector_unique[j]) + 1) / (
+                    numWordsAction + numUniqueWords)
+            probArray[1][j] = (bagAdventure.count(query_string_vector_unique[j]) + 1) / (
+                    numWordsAdventure + numUniqueWords)
+            probArray[2][j] = (bagStrategy.count(query_string_vector_unique[j]) + 1) / (
+                    numWordsStrategy + numUniqueWords)
+            probArray[3][j] = (bagRPG.count(query_string_vector_unique[j]) + 1) / (numWordsRPG + numUniqueWords)
+            probArray[4][j] = (bagSport.count(query_string_vector_unique[j]) + 1) / (numWordsSport + numUniqueWords)
+            probArray[5][j] = (bagRacing.count(query_string_vector_unique[j]) + 1) / (
+                    numWordsRacing + numUniqueWords)
+
+        # P(isAction)
+        P_Action = numAction / numofDoc
+        # P(isAdventure)
+        P_Adventure = numAdventure / numofDoc
+        # P(isStrategy)
+        P_Strategy = numStrategy / numofDoc
+        # P(isRPG)
+        P_RPG = numRPG / numofDoc
+        # P(isSports)
+        P_Sports = numSports / numofDoc
+        # P(isRacing)
+        P_Racing = numRacing / numofDoc
+
+        P_class_given_d[0] = P_Action
+        P_class_given_d[1] = P_Adventure
+        P_class_given_d[2] = P_Strategy
+        P_class_given_d[3] = P_RPG
+        P_class_given_d[4] = P_Sports
+        P_class_given_d[5] = P_Racing
+
+        for k in range(query_string_num):
+            for l in range(query_string_vector.count(query_string_vector_unique[k])):
+                P_class_given_d[0] = P_class_given_d[0] * probArray[0][k]
+                P_class_given_d[1] = P_class_given_d[1] * probArray[1][k]
+                P_class_given_d[2] = P_class_given_d[2] * probArray[2][k]
+                P_class_given_d[3] = P_class_given_d[3] * probArray[3][k]
+                P_class_given_d[4] = P_class_given_d[4] * probArray[4][k]
+                P_class_given_d[5] = P_class_given_d[5] * probArray[5][k]
+
+        IDF = np.zeros(numofWordSearch).tolist()
+        for i in range(numofWordSearch):
+            qry2 = db_session.query(Games).filter(Games.AboutText.contains(search_string_vector[i]))
+            results2 = qry2.all()
+            IDF[i] = np.log(numofDoc / (1 + len(results2)))
+
+        # TF
+        doc = np.zeros((numofDoc, numofWordSearch)).tolist()
+        for i in range(0, numofDoc):
+            postsplit = re.split('[-_;:?<>() |, |/*|\n.!-+\t]', results[i].AboutText.lower())
+            while postsplit.count(''):
+                postsplit.remove('')
+            numofWordDoc = len(postsplit)
+            tfidfScore_sum = 0.0
+            for j in range(0, numofWordSearch):
+                doc[i][j] = postsplit.count(search_string_vector[j]) / (1 + numofWordDoc)
+                # TF-IDF
+                tfidfScore_sum = tfidfScore_sum + (doc[i][j] * IDF[j])
+
+            probWeight = 0.00000000000000001
+            if results[i].isAction == 'True':
+                probWeight = probWeight + P_class_given_d[0]
+
+            if results[i].isAdventure == 'True':
+                probWeight = probWeight + P_class_given_d[1]
+
+            if results[i].isStrategy == 'True':
+                probWeight = probWeight + P_class_given_d[2]
+
+            if results[i].isRPG == 'True':
+                probWeight = probWeight + P_class_given_d[3]
+
+            if results[i].isSports == 'True':
+                probWeight = probWeight + P_class_given_d[4]
+
+            if results[i].isRacing == 'True':
+                probWeight = probWeight + P_class_given_d[5]
+
+            results[i].tfidfScore = results[i].tfidfScore + (probWeight*tfidfScore_sum)
+
+    results.sort(key=operator.attrgetter('tfidfScore'), reverse=True)
+
+    for t in range(0, 10):
+        if results[t].GenreList == 'True':
+            results[t].GenreList = 'None'
+
+    if histCount < 3:
+        return render_template('recommend.html', table=results[0:10], query=search_string_vector,
+                               searchQueryHistory=searchQueryHistory[0:histCount])
+    else:
+        return render_template('recommend.html', table=results[0:10], query=search_string_vector,
+                               searchQueryHistory=searchQueryHistory[histCount-3:histCount])
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)

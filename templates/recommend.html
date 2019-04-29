@@ -1,13 +1,11 @@
 <!DOCTYPE html>
 <head>
-
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
-    <title>Search Results</title>
-
+    <title>Flask Steam Game Database</title>
 </head>
 
+<li><a href="/">Phase 1: Search</a></li>
 <li><a href="/classifierIndex">Phase 2: Classifier</a></li>
-<li><a href="/recommend">Phase 3: Recommender</a></li>
 <h2>Flask Steam Game Database</h2>
 
 {% with messages = get_flashed_messages() %}
@@ -20,14 +18,11 @@
   {% endif %}
 {% endwith %}
 
-{% from "_formhelpers.html" import render_field %}
-<form method=post>
-  <dl>
-    {{ render_field(form.search) }}
-  </dl>
-  <p><input type=submit value=Search>
-</form>
-
+Past 3 Searches
+{% for query in searchQueryHistory %}
+    <li>{{ query.query }}</li>
+{% endfor %}
+<br> </br>
 
 <table style="width:100%">
     <tr>
@@ -38,7 +33,7 @@
       <th>Initial Price</th>
       <th>Description</th>
       <th>Genres</th>
-      <th>TF-IDF Score</th>
+      <th>Score</th>
   </tr>
     {% for game in table %}
     <tr id="{{ game.id }}">
@@ -47,18 +42,9 @@
         <td>{{ game.Metacritic }}</td>
         <td>{{ game.RecommendationCount }}</td>
         <td>${{ game.PriceInitial }}</td>
-        <td>{% for line in game.AboutText.split(' ') %}
-            {% if line.lower() in query %}
-                <mark>{{ line }}</mark>
-            {% else %}
-                {{ line }}
-            {% endif %}
-        {% endfor %}</td>
+        <td>{{ game.AboutText }}</td>
         <td>{{ game.GenreList }}</td>
         <td>{{ game.tfidfScore }}</td>
     </tr>
     {% endfor %}
 </table>
-
-
-
